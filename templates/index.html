@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bright ATS Analyzer</title>
+    <style>
+        /* CSS Variables for a Bright Theme */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --secondary-gradient: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
+            --bg-color: #f0fdf4;
+            /* Very light mint/white */
+            --card-bg: #ffffff;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --accent-color: #8b5cf6;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius: 16px;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #fdf2f8;
+            /* Soft pinkish background */
+            background-image:
+                radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header Styling */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin: 0;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            letter-spacing: -1px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            color: #581c87;
+            font-size: 1.2rem;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        /* Card Styling */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: #4c1d95;
+            font-size: 1.1rem;
+        }
+
+        /* Form Inputs */
+        input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            background: #f5f3ff;
+            border: 2px dashed #a78bfa;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #5b21b6;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        input[type="file"]:hover {
+            background: #ede9fe;
+            border-color: #7c3aed;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            min-height: 150px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+            background-color: #f8fafc;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        /* Button Styling */
+        .btn-grad {
+            background-image: var(--primary-gradient);
+            margin: 10px 0 0;
+            padding: 15px 45px;
+            text-align: center;
+            text-transform: uppercase;
+            transition: 0.5s;
+            background-size: 200% auto;
+            color: white;
+            box-shadow: 0 0 20px #eee;
+            border-radius: 50px;
+            border: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 100%;
+            display: block;
+            letter-spacing: 1px;
+        }
+
+        .btn-grad:hover {
+            background-position: right center;
+            /* change the direction of the change here */
+            color: #fff;
+            text-decoration: none;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+            transform: scale(1.02);
+        }
+
+        .btn-grad:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Results Section */
+        #results {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 25px;
+            overflow: hidden;
+            border-top: 5px solid;
+        }
+
+        .result-card.ats-score {
+            grid-column: 1 / -1;
+            border-color: #8b5cf6;
+            /* Purple */
+            background: linear-gradient(to bottom, #ffffff, #faf5ff);
+        }
+
+        .result-card.resume-parsed {
+            border-color: #3b82f6;
+            /* Blue */
+        }
+
+        .result-card.jd-parsed {
+            border-color: #10b981;
+            /* Green */
+        }
+
+        .result-card h3 {
+            margin-top: 0;
+            color: #1e293b;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        /* Markdown-like Content Styling */
+        .content-area {
+            white-space: pre-wrap;
+            line-height: 1.7;
+            color: #334155;
+            font-size: 0.95rem;
+        }
+
+        /* Loader */
+        .loader-container {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #FFF;
+            border-bottom-color: #8b5cf6;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            color: #4c1d95;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Status Badge */
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            background: #e0e7ff;
+            color: #4338ca;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <div class="badge">✨ AI-Powered</div>
+            <h1>Smart ATS Analyzer</h1>
+            <p class="subtitle">Optimize your resume for the perfect job match using Gemini 2.5 Flash</p>
+        </header>
+
+        <!-- Input Section -->
+        <div class="card">
+            <form id="uploadForm">
+                <div class="input-group">
+                    <label for="resume">📄 Upload Resume (PDF)</label>
+                    <input type="file" id="resume" name="resume" accept=".pdf" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="jd">💼 Job Description</label>
+                    <textarea id="jd" name="job_description" placeholder="Paste the job description here to compare..."
+                        required></textarea>
+                </div>
+
+                <button type="submit" class="btn-grad" id="analyzeBtn">Analyze Match</button>
+            </form>
+        </div>
+
+        <!-- Loader -->
+        <div class="loader-container" id="loader">
+            <div class="loader"></div>
+            <div class="loading-text">Analyzing documents... Please wait.</div>
+        </div>
+
+        <!-- Results Grid -->
+        <div id="results">
+            <!-- Full Width ATS Result -->
+            <div class="result-card ats-score">
+                <h3>📊 ATS Match Report</h3>
+                <div class="content-area" id="atsContent"></div>
+            </div>
+
+            <!-- Parsed Resume -->
+            <div class="result-card resume-parsed">
+                <h3>👤 Parsed Resume</h3>
+                <div class="content-area" id="resumeContent"></div>
+            </div>
+
+            <!-- Parsed JD -->
+            <div class="result-card jd-parsed">
+                <h3>🏢 Parsed Job Description</h3>
+                <div class="content-area" id="jdContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Get Elements
+            const form = e.target;
+            const btn = document.getElementById('analyzeBtn');
+            const loader = document.getElementById('loader');
+            const results = document.getElementById('results');
+
+            // Output Elements
+            const atsContent = document.getElementById('atsContent');
+            const resumeContent = document.getElementById('resumeContent');
+            const jdContent = document.getElementById('jdContent');
+
+            // Reset UI
+            results.style.display = 'none';
+            loader.style.display = 'block';
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+
+            try {
+                // Prepare Data
+                const formData = new FormData(form);
+
+                // Make API Call
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Something went wrong');
+                }
+
+                // Render Results
+                // Using innerText for safety, but data comes from backend text generation
+                // Simple formatting: bolding headers if they exist in markdown style
+                atsContent.innerHTML = formatText(data.ats_result);
+                resumeContent.innerHTML = formatText(data.parsed_resume);
+                jdContent.innerHTML = formatText(data.parsed_job_description);
+
+                // Show Results
+                loader.style.display = 'none';
+                results.style.display = 'grid';
+
+                // Scroll to results
+                results.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                loader.style.display = 'none';
+                alert('Error: ' + error.message);
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Analyze Match';
+            }
+        });
+
+        // Simple helper to make markdown-like text look a bit better without a full library
+        function formatText(text) {
+            if (!text) return '';
+            // Basic sanitization
+            let clean = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            // Bold (**text**)
+            clean = clean.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            // Bullet points
+            clean = clean.replace(/^\* (.*$)/gm, '• $1');
+
+            return clean;
+        }
+    </script>
+</body>
+
+</html>
