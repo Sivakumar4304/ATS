@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from google import genai
@@ -15,25 +16,129 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# Initialize Gemini Client
-client = genai.Client(api_key="GEMINI_API_KEY_PLACEHOLDER")
+# Use the environment-supported model
+MODEL_ID = "gemini-2.5-flash"
+client = genai.Client(api_key="AIzaSyCoAQZcbRNdHtwH2Ow7loNzxlaprYq-dvo") 
 
 # ==============================
-# PDF PARSING
+# 1. PDF PARSING
 # ==============================
-def extract_text_from_pdf(pdf_path):
-    """Extracts text from a PDF file using PyPDF2."""
-    extracted_text = ""
+def pdf_parsing(pdf_path):
+    """Extracts raw text from a PDF file."""
+    text = ""
     try:
         with open(pdf_path, "rb") as file:
             reader = PyPDF2.PdfReader(file)
             for page in reader.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    extracted_text += page_text
+                extracted = page.extract_text()
+                if extracted:
+                    text += extracted
     except Exception as e:
-        print(f"Error parsing PDF: {e}")
-    return extracted_text
+        print(f"Error reading PDF: {e}")
+    return text
+
+# ==============================
+# 2. RESUME PARSING
+# ==============================
+def resume_parsing(resume_text):
+    """Formats raw extracted text into a structured resume profile using AI."""
+    prompt = f"""
+    Analyze the following raw resume text and extract the key profile details.
+    Organize it into:
+    - Core Skills
+    - Professional Experience Highlights
+    - Education
+    - Technical Tools
+
+    Resume Text:
+    {resume_text}
+    """
+    try:
+        response = client.models.generate_content(model=MODEL_ID, contents=prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Resume Parsing Error: {e}")
+        return resume_text
+
+# ==============================
+# 3. JD PARSING
+# ==============================
+def jd_parsing(jd_text):
+    """Extracts job details, requirements, and keywords from the description."""
+    prompt = f"""
+    Analyze the following Job Description and extract the critical requirements.
+    Focus on:
+    - Essential Technical Skills
+    - Soft Skills & Leadership
+    - Primary Responsibilities
+    - Minimum Qualifications
+
+    Job Description:
+    {jd_text}
+    """
+    try:
+        response = client.models.generate_content(model=MODEL_ID, contents=prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f"JD Parsing Error: {e}")
+        return jd_text
+
+# ==============================
+# 4. ATS CHECKER (Robust JSON Extraction)
+# ==============================
+def ats_checker(parsed_resume, parsed_jd):
+    """
+    Compares the processed resume and job description.
+    Uses Regex to find the JSON block to avoid errors from conversational AI text.
+    """
+    prompt = f"""
+    You are an expert ATS (Applicant Tracking System). 
+    Compare the following Parsed Resume and Parsed Job Description.
+
+    PARSED RESUME:
+    {parsed_resume}
+
+    PARSED JOB DESCRIPTION:
+    {parsed_jd}
+
+    TASK:
+    Return a JSON object ONLY. 
+    
+    REQUIRED JSON STRUCTURE (Ensure these exact keys):
+    {{
+        "score": 85,
+        "summary": "Executive summary of the match.",
+        "pros": ["Point 1", "Point 2"],
+        "cons": ["Gap 1", "Gap 2"],
+        "improvements": ["Action 1", "Action 2"]
+    }}
+    """
+    try:
+        response = client.models.generate_content(model=MODEL_ID, contents=prompt)
+        raw_text = response.text.strip()
+        
+        # FIND THE JSON BLOCK: Look for the first '{' and the last '}'
+        # This is more reliable than split("```")
+        start_idx = raw_text.find('{')
+        end_idx = raw_text.rfind('}')
+        
+        if start_idx != -1 and end_idx != -1:
+            json_string = raw_text[start_idx:end_idx + 1]
+            return json.loads(json_string)
+        else:
+            # If no brackets found, try parsing the raw text directly
+            return json.loads(raw_text)
+
+    except Exception as e:
+        print(f"ATS Checker Error: {e}")
+        # Return a valid JSON response so the frontend doesn't crash
+        return {
+            "score": 0,
+            "summary": "The AI failed to generate a structured response. Please try again.",
+            "pros": ["Error parsing response"],
+            "cons": ["Internal AI error"],
+            "improvements": ["Try simplifying the job description"]
+        }
 
 # ==============================
 # ROUTES
@@ -41,70 +146,49 @@ def extract_text_from_pdf(pdf_path):
 
 @app.route("/")
 def index():
-    """Renders the frontend template."""
     return render_template("index.html")
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    """API endpoint to analyze resume compatibility."""
     if "resume" not in request.files:
-        return jsonify({"error": "Resume PDF is required"}), 400
-    
-    resume_file = request.files["resume"]
-    jd_text = request.form.get("job_description", "").strip()
+        return jsonify({"error": "No resume file uploaded"}), 400
 
-    if resume_file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+    resume_file = request.files["resume"]
+    raw_jd_text = request.form.get("job_description", "").strip()
+
+    if not resume_file or not raw_jd_text:
+        return jsonify({"error": "Both resume and job description are required"}), 400
 
     try:
-        # Save PDF
+        # Save and extract raw text
         pdf_path = os.path.join(app.config["UPLOAD_FOLDER"], resume_file.filename)
         resume_file.save(pdf_path)
         
-        # Extract text
-        resume_content = extract_text_from_pdf(pdf_path)
+        # 1. PDF Parsing
+        raw_resume_text = pdf_parsing(pdf_path)
         
-        if not resume_content.strip():
-            return jsonify({"error": "Could not read PDF text. Ensure it's not an image scan."}), 400
+        # Clean up the file immediately after extraction
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
 
-        # Structured Prompt for specific sections
-        target_context = f"against this target Job Description: {jd_text}" if jd_text else "based on general industry standards for high-performing resumes"
-        
-        prompt = f"""
-        Act as a professional ATS (Applicant Tracking System) Checker.
-        Analyze the following resume {target_context}.
+        if not raw_resume_text.strip():
+            return jsonify({"error": "Empty or unreadable PDF"}), 400
 
-        Resume Content: 
-        {resume_content}
+        # 2. Resume Parsing (LLM Step 1)
+        formatted_resume = resume_parsing(raw_resume_text)
 
-        Please provide your analysis in a structured JSON format with the following keys:
-        1. "score": An integer from 0-100.
-        2. "pros": A list of strings identifying strong points.
-        3. "cons": A list of strings identifying weaknesses or missing elements.
-        4. "improvements": A list of specific actionable suggestions.
-        5. "summary": A brief 2-sentence professional overview.
+        # 3. JD Parsing (LLM Step 2)
+        formatted_jd = jd_parsing(raw_jd_text)
 
-        Ensure the response is valid JSON only.
-        """
+        # 4. ATS Checker (LLM Step 3 - Final JSON)
+        final_results = ats_checker(formatted_resume, formatted_jd)
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config={
-                "response_mime_type": "application/json"
-            }
-        )
-
-        # Cleanup
-        os.remove(pdf_path)
-
-        # Parse JSON response from LLM
-        analysis_data = json.loads(response.text)
-        return jsonify(analysis_data)
+        # Return the JSON object to the frontend
+        return jsonify(final_results)
 
     except Exception as e:
-        print(f"Server Error: {str(e)}")
-        return jsonify({"error": "Failed to process the analysis. Please try again."}), 500
+        print(f"Route Error: {e}")
+        return jsonify({"error": "A server error occurred during analysis"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=8080)
