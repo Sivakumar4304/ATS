@@ -18,7 +18,7 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # Use the environment-supported model
 MODEL_ID = "gemini-2.5-flash"
-client = genai.Client(api_key="AIzaSyCoAQZcbRNdHtwH2Ow7loNzxlaprYq-dvo") 
+client = genai.Client(api_key="GEMINI_API_KEY") 
 
 # ==============================
 # 1. PDF PARSING
